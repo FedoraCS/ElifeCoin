@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# PROVIDE: ElifeCoin
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+#
+# Add the following lines to /etc/rc.conf.local or /etc/rc.conf
+# to enable this service:
+#
+# ElifeCoin_enable (bool): Set to NO by default. Set this variable to YES if you want to enable ElifeCoin service.
+# ElifeCoin_config (path): Set to /usr/local/etc/ElifeCoin.conf by default.
+# ElifeCoin_user:  The user account ElifeCoin daemon runs as. It uses 'root' user by default.
+# ElifeCoin_group: The group account ElifeCoin daemon runs as. It uses 'wheel' group by default.
+# ElifeCoin_datadir (str): Default to "/var/db/ElifeCoin". Base data directory.
+
+. /etc/rc.subr
+
+name=ElifeCoin
+rcvar=ElifeCoin_enable
+
+: ${ElifeCoin_enable:=NO}
+: ${ElifeCoin_config=/usr/local/etc/ElifeCoin.conf}
+: ${ElifeCoin_datadir=/var/db/ElifeCoin}
+: ${ElifeCoin_user="root"}
+: ${ElifeCoin_group="wheel"}
+
+required_files=${ElifeCoin_config}
+command=/usr/local/bin/ElifeCoind
+ElifeCoin_chdir=${ElifeCoin_datadir}
+pidfile="${ElifeCoin_datadir}/ElifeCoind.pid"
+stop_cmd=ElifeCoin_stop
+command_args="-conf=${ElifeCoin_config} -datadir=${ElifeCoin_datadir} -daemon -pid=${pidfile}"
+start_precmd="${name}_prestart"
+
+ElifeCoin_create_datadir()
+{
+	echo "Creating data directory"
+	eval mkdir -p ${ElifeCoin_datadir}
+	[ $? -eq 0 ] && chown -R ${ElifeCoin_user}:${ElifeCoin_group} ${ElifeCoin_datadir}
+}
+
+ElifeCoin_prestart()
+{
+	if [ ! -d "${ElifeCoin_datadir}/." ]; then
+		ElifeCoin_create_datadir || return 1
+	fi
+}
+
+ElifeCoin_requirepidfile()
+{
+	if [ ! "0`check_pidfile ${pidfile} ${command}`" -gt 1 ]; then
+		echo "${name} not running? (check $pidfile)."
+		exit 1
+	fi
+}
+
+ElifeCoin_stop()
+{
+    ElifeCoin_requirepidfile
+
+	echo "Stopping ${name}."
+	eval ${command} -conf=${ElifeCoin_config} -datadir=${ElifeCoin_datadir} stop
+	wait_for_pids ${rc_pid}
+}
+
+load_rc_config $name
+run_rc_command "$1"

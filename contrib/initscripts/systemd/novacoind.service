@@ -1,0 +1,11 @@
+[Unit]
+Description=ElifeCoin daemon serivce
+After=network.target
+
+[Service]
+Type=simple
+User=ElifeCoin
+ExecStart=/opt/ElifeCoin/ElifeCoind
+
+[Install]
+WantedBy=multi-user.target

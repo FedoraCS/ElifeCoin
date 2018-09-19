@@ -1,0 +1,2 @@
+debian/bin/ElifeCoind usr/bin
+src/ElifeCoind usr/lib/ElifeCoin
